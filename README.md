@@ -1,5 +1,7 @@
 # seaweedfs-operator
 
+NOTE: this is one of the projects rotting in my vault cuz i thought it wasnt good enough to be open sourced, but luckily while random scrolling, i found an oppurtunity that invlves seaweedfs, so open sourcing it now for resume :), finger's crossed now
+
 A Kubernetes operator for running SeaweedFS as a proper Kubernetes workload.
 
 It manages SeaweedFS clusters through custom resources and is meant to handle the main components: masters, volume servers, filers, the S3 gateway, buckets, and S3 users/credentials. It's built around normal Kubernetes reconciliation rather than a pile of static manifests.
