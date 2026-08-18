@@ -1,0 +1,278 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.3
+  name: objectstorageusers.objectstorage.openeverest.io
+spec:
+  group: objectstorage.openeverest.io
+  names:
+    categories:
+    - objectstorage
+    kind: ObjectStorageUser
+    listKind: ObjectStorageUserList
+    plural: objectstorageusers
+    shortNames:
+    - osu
+    singular: objectstorageuser
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.identityName
+      name: Identity
+      type: string
+    - jsonPath: .spec.clusterRef.name
+      name: Cluster
+      type: string
+    - jsonPath: .status.secretRef
+      name: Secret
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          ObjectStorageUser is an S3 identity with credentials delivered through a
+          Kubernetes Secret.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ObjectStorageUserSpec is the desired state of an S3 identity.
+            properties:
+              bucketGrants:
+                description: BucketGrants lists the per-bucket permissions for this
+                  identity.
+                items:
+                  description: BucketGrant grants a set of actions on one bucket.
+                  properties:
+                    actions:
+                      description: Actions granted on the bucket.
+                      items:
+                        description: |-
+                          S3Action is one of the permission verbs the SeaweedFS S3 IAM layer
+                          understands. They map onto groups of S3 operations rather than individual
+                          API calls.
+                        enum:
+                        - Read
+                        - Write
+                        - List
+                        - Tagging
+                        - Admin
+                        - ReadAcp
+                        - WriteAcp
+                        type: string
+                      minItems: 1
+                      type: array
+                    bucketName:
+                      description: |-
+                        BucketName is the S3 bucket the actions apply to. Use "*" to grant the
+                        actions on every bucket in the cluster.
+                      minLength: 1
+                      type: string
+                    bucketRef:
+                      description: |-
+                        BucketRef instead resolves the bucket name from an ObjectStorageBucket in
+                        the same namespace. When both are set BucketRef wins, because it is the
+                        one the API server can validate as a real object.
+                      properties:
+                        name:
+                          description: Name of the Secret.
+                          minLength: 1
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    prefix:
+                      description: |-
+                        Prefix narrows the grant to keys under this prefix. Empty means the whole
+                        bucket.
+                      type: string
+                  required:
+                  - actions
+                  - bucketName
+                  type: object
+                type: array
+              clusterActions:
+                description: |-
+                  ClusterActions grants actions that are not scoped to a bucket, notably
+                  Admin. Use sparingly.
+                items:
+                  description: |-
+                    S3Action is one of the permission verbs the SeaweedFS S3 IAM layer
+                    understands. They map onto groups of S3 operations rather than individual
+                    API calls.
+                  enum:
+                  - Read
+                  - Write
+                  - List
+                  - Tagging
+                  - Admin
+                  - ReadAcp
+                  - WriteAcp
+                  type: string
+                type: array
+              clusterRef:
+                description: |-
+                  ClusterRef names the ObjectStorageCluster the identity belongs to. The
+                  cluster must live in the same namespace.
+                properties:
+                  name:
+                    description: Name of the ObjectStorageCluster.
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              deletionPolicy:
+                default: Delete
+                description: |-
+                  DeletionPolicy decides whether deleting this object also removes the
+                  identity from the SeaweedFS IAM configuration. Unlike buckets, the safe
+                  default here is Delete: leaving orphaned credentials that still work is
+                  worse than losing an identity you can recreate.
+                enum:
+                - Delete
+                - Retain
+                type: string
+              identityName:
+                description: |-
+                  IdentityName is the SeaweedFS identity name. Defaults to
+                  "<namespace>-<name>" so identities from different namespaces cannot
+                  collide in the cluster-wide IAM config.
+                type: string
+              secretName:
+                description: |-
+                  SecretName is the Secret the operator writes the generated credentials
+                  into. Defaults to "<name>-s3-credentials". If the Secret already exists
+                  with accessKeyID and secretAccessKey keys, those credentials are adopted
+                  rather than regenerated — that is how you bring your own keys.
+                type: string
+            required:
+            - clusterRef
+            type: object
+          status:
+            description: ObjectStorageUserStatus is the observed state of an S3 identity.
+            properties:
+              accessKeyID:
+                description: |-
+                  AccessKeyID is the non-secret half of the credential pair, surfaced so
+                  operators can correlate audit logs without reading the Secret.
+                type: string
+              conditions:
+                description: Conditions carries Ready and, when relevant, Failed details.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              endpoint:
+                description: Endpoint is the S3 endpoint these credentials authenticate
+                  against.
+                type: string
+              grantedBuckets:
+                description: GrantedBuckets lists the buckets this identity currently
+                  has access to.
+                items:
+                  type: string
+                type: array
+              identityName:
+                description: IdentityName is the effective identity name inside SeaweedFS.
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the .metadata.generation last reconciled.
+                format: int64
+                type: integer
+              phase:
+                description: Phase summarises the identity state.
+                enum:
+                - Pending
+                - Ready
+                - Failed
+                - Deleting
+                type: string
+              secretRef:
+                description: |-
+                  SecretRef is the name of the Secret holding the credentials. The secret
+                  access key is never copied into status.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

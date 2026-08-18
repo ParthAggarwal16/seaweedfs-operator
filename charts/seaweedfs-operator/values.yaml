@@ -1,0 +1,50 @@
+
+image:
+  repository: ghcr.io/openeverest/seaweedfs-operator
+  tag: ""            # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+replicaCount: 1
+
+watchNamespace: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  create: true
+
+leaderElection:
+  enabled: true
+
+metrics:
+  enabled: true
+  port: 8080
+  service:
+    enabled: true
+    type: ClusterIP
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    labels: {}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podLabels: {}
+
+logging:
+  mode: production
+  level: info

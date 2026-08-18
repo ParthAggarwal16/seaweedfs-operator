@@ -1,0 +1,62 @@
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageCluster
+metadata:
+  name: objectstore
+spec:
+  version: "3.80"
+
+  defaultReplication: "010"
+
+  master:
+    replicas: 3
+    storage:
+      size: 5Gi
+      storageClassName: fast-ssd
+    resources:
+      requests: {cpu: 200m, memory: 512Mi}
+      limits: {memory: 2Gi}
+
+  volume:
+    replicas: 6
+    storage:
+      size: 500Gi
+      storageClassName: fast-ssd
+    index: leveldb
+    compactionMBps: 50
+    topologyFromNodeLabels:
+      dataCenterLabel: topology.kubernetes.io/region
+      rackLabel: topology.kubernetes.io/zone
+    resources:
+      requests: {cpu: "1", memory: 4Gi}
+      limits: {memory: 16Gi}
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: seaweedfs
+            app.kubernetes.io/component: volume
+
+  filer:
+    replicas: 2
+    storage:
+      size: 50Gi
+      storageClassName: fast-ssd
+    configMapName: filer-postgres-config
+    resources:
+      requests: {cpu: 500m, memory: 2Gi}
+
+  s3:
+    enabled: true
+    replicas: 3
+    domainName: s3.example.com
+    service:
+      type: LoadBalancer
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+  upgrade:
+    strategy: OrderedComponents
+
+  metrics: true

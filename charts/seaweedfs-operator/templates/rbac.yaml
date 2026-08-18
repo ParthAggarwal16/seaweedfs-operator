@@ -1,0 +1,112 @@
+{{- if .Values.rbac.create }}
+{{- $name := include "seaweedfs-operator.fullname" . }}
+{{- /*
+  A namespace-scoped install gets a Role; a cluster-wide install gets a
+  ClusterRole. Granting cluster-wide permissions to a single-namespace operator
+  would hand it reach it does not need.
+*/}}
+{{- if .Values.watchNamespace }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Values.watchNamespace }}
+  labels:
+    {{- include "seaweedfs-operator.labels" . | nindent 4 }}
+{{- else }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "seaweedfs-operator.labels" . | nindent 4 }}
+{{- end }}
+rules:
+  - apiGroups: ["objectstorage.openeverest.io"]
+    resources:
+      - objectstorageclusters
+      - objectstoragebuckets
+      - objectstorageusers
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["objectstorage.openeverest.io"]
+    resources:
+      - objectstorageclusters/status
+      - objectstoragebuckets/status
+      - objectstorageusers/status
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["objectstorage.openeverest.io"]
+    resources:
+      - objectstorageclusters/finalizers
+      - objectstoragebuckets/finalizers
+      - objectstorageusers/finalizers
+    verbs: ["update"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+{{- if .Values.watchNamespace }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Values.watchNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}
+{{- else }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}
+{{- end }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "seaweedfs-operator.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.leaderElection.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}-leader-election
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}-leader-election
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "seaweedfs-operator.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}

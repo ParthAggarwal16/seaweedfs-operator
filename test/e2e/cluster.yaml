@@ -1,0 +1,36 @@
+# The cluster the e2e suite exercises: real SeaweedFS, two volume servers spread
+# across the two kind worker zones, S3 exposed on a fixed NodePort.
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageCluster
+metadata:
+  name: e2e
+  namespace: seaweedfs-e2e
+spec:
+  version: "3.80"
+  defaultReplication: "000"
+  master:
+    replicas: 1
+    storage:
+      size: 1Gi
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+  volume:
+    replicas: 2
+    storage:
+      size: 2Gi
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+  filer:
+    replicas: 1
+    storage:
+      size: 1Gi
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+  s3:
+    enabled: true
+    replicas: 1
+    service:
+      type: NodePort
+      nodePort: 30333
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}

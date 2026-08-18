@@ -1,0 +1,31 @@
+{{ .Chart.Name }} {{ .Chart.AppVersion }} is installed in namespace {{ .Release.Namespace }}.
+
+{{ if .Values.watchNamespace -}}
+It is watching only the {{ .Values.watchNamespace }} namespace.
+{{- else -}}
+It is watching all namespaces.
+{{- end }}
+
+Create your first cluster:
+
+  kubectl apply -f - <<'YAML'
+  apiVersion: objectstorage.openeverest.io/v1alpha1
+  kind: ObjectStorageCluster
+  metadata:
+    name: quickstart
+  spec:
+    version: "3.80"
+    volume:
+      replicas: 1
+      storage:
+        size: 5Gi
+  YAML
+
+Watch it come up:
+
+  kubectl get objectstoragecluster quickstart -w
+
+The S3 endpoint appears on .status.s3Endpoint once the cluster is ready. The
+operator's own admin credentials live in the Secret named by
+.status.adminSecretName; create an ObjectStorageUser rather than handing those
+out to workloads.

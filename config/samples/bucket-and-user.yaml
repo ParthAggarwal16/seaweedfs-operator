@@ -1,0 +1,48 @@
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageBucket
+metadata:
+  name: app-uploads
+spec:
+  clusterRef:
+    name: quickstart
+  deletionPolicy: Retain
+  quota:
+    sizeGiB: 100
+    enforce: true
+  connectionSecretName: app-uploads-connection
+---
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageUser
+metadata:
+  name: uploader
+spec:
+  clusterRef:
+    name: quickstart
+  bucketGrants:
+    - bucketRef:
+        name: app-uploads
+      actions: [Read, Write, List]
+  deletionPolicy: Delete
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: s3-smoke-test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: awscli
+      image: amazon/aws-cli:2.17.0
+      command:
+        - sh
+        - -c
+        - |
+          aws --endpoint-url "$AWS_ENDPOINT_URL" s3 ls
+          echo "hello from kubernetes" > /tmp/hello.txt
+          aws --endpoint-url "$AWS_ENDPOINT_URL" s3 cp /tmp/hello.txt "s3://$S3_BUCKET/hello.txt"
+          aws --endpoint-url "$AWS_ENDPOINT_URL" s3 ls "s3://$S3_BUCKET/"
+      envFrom:
+        - secretRef:
+            name: uploader-s3-credentials
+        - secretRef:
+            name: app-uploads-connection

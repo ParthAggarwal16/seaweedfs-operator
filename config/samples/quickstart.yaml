@@ -1,0 +1,10 @@
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageCluster
+metadata:
+  name: quickstart
+spec:
+  version: "3.80"
+  volume:
+    replicas: 1
+    storage:
+      size: 5Gi

@@ -1,0 +1,23 @@
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageBucket
+metadata:
+  name: e2e-bucket
+  namespace: seaweedfs-e2e
+spec:
+  clusterRef:
+    name: e2e
+  deletionPolicy: Delete
+  connectionSecretName: e2e-bucket-connection
+---
+apiVersion: objectstorage.openeverest.io/v1alpha1
+kind: ObjectStorageUser
+metadata:
+  name: e2e-user
+  namespace: seaweedfs-e2e
+spec:
+  clusterRef:
+    name: e2e
+  bucketGrants:
+    - bucketRef:
+        name: e2e-bucket
+      actions: [Read, Write, List]

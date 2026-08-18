@@ -1,0 +1,15 @@
+apiVersion: v2
+name: seaweedfs-operator
+description: Kubernetes operator that manages SeaweedFS S3-compatible object storage clusters
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - seaweedfs
+  - object-storage
+  - s3
+  - operator
+sources:
+  - https://github.com/openeverest/seaweedfs-operator
+maintainers:
+  - name: OpenEverest

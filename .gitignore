@@ -1,0 +1,4 @@
+bin/
+cover.out
+*.test
+test/e2e/_output/
